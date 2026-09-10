@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>prmpt.bio brand studio</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/",
+    "three/examples/jsm/": "./vendor/addons/",
+    "three-mesh-bvh": "./vendor/three-mesh-bvh.module.js",
+    "three-gpu-pathtracer": "./vendor/pathtracer.module.js",
+    "mp4-muxer": "./vendor/mp4-muxer.mjs"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <section id="stage">
+    <div id="stage-inner">
+      <div id="canvas-wrap">
+        <canvas id="view"></canvas>
+        <canvas id="overlay-inv"></canvas>
+        <canvas id="overlay"></canvas>
+      </div>
+    </div>
+    <div id="stage-bar">
+      <span id="dims">—</span>
+      <span class="sep"></span>
+      <span id="hint">click an object to select · drag to move · drag corners to resize · arrows nudge · esc deselect</span>
+    </div>
+  </section>
+
+  <aside id="panel">
+    <header>
+      <h1>brand studio</h1>
+      <p>prmpt.bio identity kit</p>
+    </header>
+
+    <details open>
+      <summary>canvas</summary>
+      <label>preset
+        <select id="preset">
+          <option value="2000x2000">square · 1:1 · 2000px</option>
+          <option value="1600x2000" selected>portrait · 4:5 · 1600×2000</option>
+          <option value="1500x2000">portrait · 3:4 · 1500×2000</option>
+          <option value="1125x2000">story · 9:16 · 1125×2000</option>
+          <option value="2000x1125">wide · 16:9 · 2000×1125</option>
+          <option value="1200x630">og image · 1.91:1 · 1200×630</option>
+          <option value="2480x3508">A4 · 300dpi · 2480×3508</option>
+          <option value="3508x4961">A3 · 300dpi · 3508×4961</option>
+          <option value="custom">custom…</option>
+        </select>
+      </label>
+      <div class="row" id="custom-size" hidden>
+        <label>w <input type="number" id="cw" min="64" max="8000" step="1" value="1600"></label>
+        <label>h <input type="number" id="ch" min="64" max="8000" step="1" value="2000"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="grid-on" checked> show grid</label>
+      <label class="check"><input type="checkbox" id="snap-on" checked> snap to grid</label>
+      <label class="check"><input type="checkbox" id="grid-export"> include grid in exports</label>
+      <label class="check"><input type="checkbox" id="match-preview" checked> exports match preview look</label>
+      <label>grid step <output id="grid-step-o">5</output>
+        <input type="range" id="grid-step" min="1" max="20" step="1" value="5">
+      </label>
+    </details>
+
+    <details open>
+      <summary>background</summary>
+      <div id="bg-swatches" class="swatches"></div>
+      <label>noise <output id="noise-o">0.06</output>
+        <input type="range" id="noise" min="0" max="1" step="0.01" value="0.06">
+      </label>
+      <label>grain size <output id="grain-o">1.4</output>
+        <input type="range" id="grain" min="0.5" max="8" step="0.1" value="1.4">
+      </label>
+      <label class="check"><input type="checkbox" id="noise-mono" checked> monochrome grain</label>
+    </details>
+
+    <details open>
+      <summary>logotype</summary>
+      <label>text <textarea id="text" rows="2" maxlength="200" spellcheck="false">prmpt.bio</textarea></label>
+      <div class="muted field-note">enter starts a new line</div>
+      <div class="row">
+        <button id="shuffle">shuffle alternates</button>
+        <button id="reset-logo">reset</button>
+      </div>
+      <label>size <output id="logo-size-o">7.0</output>
+        <input type="range" id="logo-size" min="1" max="30" step="0.1" value="7">
+      </label>
+      <label>tracking <output id="logo-track-o">0.06</output>
+        <input type="range" id="logo-track" min="-0.1" max="0.6" step="0.01" value="0.06">
+      </label>
+      <label>leading <output id="logo-lead-o">1.15</output>
+        <input type="range" id="logo-lead" min="0.6" max="2.5" step="0.01" value="1.15">
+      </label>
+      <label>colour</label>
+      <div id="logo-swatches" class="swatches"></div>
+      <label>gloss <output id="logo-gloss-o">0.88</output>
+        <input type="range" id="logo-gloss" min="0" max="1" step="0.01" value="0.88">
+      </label>
+      <div class="sub-head"><span>rotation</span><button id="logo-rot-reset" class="mini">reset</button></div>
+      <div class="row3">
+        <label>rot x <input type="range" id="logo-rx" min="-60" max="60" step="1" value="0"></label>
+        <label>rot y <input type="range" id="logo-ry" min="-60" max="60" step="1" value="0"></label>
+        <label>rot z <input type="range" id="logo-rz" min="-45" max="45" step="1" value="0"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="logo-on" checked> visible</label>
+    </details>
+
+    <details open>
+      <summary>key</summary>
+      <label>size <output id="key-size-o">44.0</output>
+        <input type="range" id="key-size" min="5" max="140" step="0.5" value="44">
+      </label>
+      <label>depth <output id="key-depth-o">14</output>
+        <input type="range" id="key-depth" min="1" max="60" step="1" value="14">
+      </label>
+      <label>layer gap <output id="key-gap-o">6</output>
+        <input type="range" id="key-gap" min="0" max="40" step="1" value="6">
+      </label>
+      <label>edge bevel <output id="key-bevel-o">0.5</output>
+        <input type="range" id="key-bevel" min="0" max="1" step="0.05" value="0.5">
+      </label>
+      <label>gloss <output id="key-gloss-o">0.55</output>
+        <input type="range" id="key-gloss" min="0" max="1" step="0.01" value="0.55">
+      </label>
+      <div class="sub-head"><span>rotation</span><button id="key-rot-reset" class="mini">reset</button></div>
+      <div class="row3">
+        <label>rot x <input type="range" id="key-rx" min="-60" max="60" step="1" value="0"></label>
+        <label>rot y <input type="range" id="key-ry" min="-60" max="60" step="1" value="0"></label>
+        <label>rot z <input type="range" id="key-rz" min="-45" max="45" step="1" value="0"></label>
+      </div>
+      <label>body colour</label>
+      <div id="key-swatches" class="swatches"></div>
+      <label>keyline colour</label>
+      <div id="ink-swatches" class="swatches"></div>
+      <label class="check"><input type="checkbox" id="eye-bg" checked> eye disc matches background</label>
+      <label class="check"><input type="checkbox" id="key-on" checked> visible</label>
+    </details>
+
+    <details open>
+      <summary>animate</summary>
+      <label>animation
+        <select id="anim-select"></select>
+      </label>
+      <div class="row">
+        <button id="anim-play" class="primary" style="font-size:12px;padding:8px">play</button>
+      </div>
+      <label>speed <output id="anim-speed-o">1.0×</output>
+        <input type="range" id="anim-speed" min="0.25" max="2" step="0.05" value="1">
+      </label>
+      <label class="check"><input type="checkbox" id="anim-loop"> loop</label>
+      <div class="progress"><div id="anim-bar"></div></div>
+      <div class="muted" id="anim-status">stopped</div>
+      <div class="row" style="margin-top:12px">
+        <label style="margin:0">height
+          <select id="vid-height">
+            <option value="720">720p</option>
+            <option value="1080" selected>1080p</option>
+            <option value="1440">1440p</option>
+          </select>
+        </label>
+        <label style="margin:0">fps
+          <select id="vid-fps">
+            <option value="24">24</option>
+            <option value="30" selected>30</option>
+            <option value="60">60</option>
+          </select>
+        </label>
+      </div>
+      <button id="anim-export" style="width:100%">export mp4</button>
+    </details>
+
+    <details open>
+      <summary>render</summary>
+      <div class="row">
+        <button id="mode-draft" class="mode on">draft</button>
+        <button id="mode-rt" class="mode">ray traced</button>
+      </div>
+      <label>samples <output id="rt-samples-o">96</output>
+        <input type="range" id="rt-samples" min="8" max="512" step="8" value="96">
+      </label>
+      <label>speckle filter <output id="rt-speckle-o">0.50</output>
+        <input type="range" id="rt-speckle" min="0" max="1" step="0.05" value="0.5">
+      </label>
+      <label>trace scale <output id="rt-scale-o">1</output>
+        <input type="range" id="rt-scale" min="0.25" max="1" step="0.05" value="1">
+      </label>
+      <div class="muted" id="rt-status">raster preview</div>
+    </details>
+
+    <details open>
+      <summary>light</summary>
+      <label>key light <output id="l-key-o">3.4</output>
+        <input type="range" id="l-key" min="0" max="10" step="0.1" value="3.4">
+      </label>
+      <label>rim light <output id="l-rim-o">2.2</output>
+        <input type="range" id="l-rim" min="0" max="10" step="0.1" value="2.2">
+      </label>
+      <label>reflections <output id="l-env-o">1.5</output>
+        <input type="range" id="l-env" min="0" max="4" step="0.05" value="1.5">
+      </label>
+      <label>light angle <output id="l-ang-o">-35</output>
+        <input type="range" id="l-ang" min="-180" max="180" step="1" value="-35">
+      </label>
+    </details>
+
+    <details open>
+      <summary>selected object</summary>
+      <div id="sel-none" class="muted">nothing selected</div>
+      <div id="sel-fields" hidden>
+        <div class="row">
+          <label>x <input type="number" id="sel-x" step="0.5"></label>
+          <label>y <input type="number" id="sel-y" step="0.5"></label>
+        </div>
+        <div class="row">
+          <button id="center-h">center h</button>
+          <button id="center-v">center v</button>
+        </div>
+      </div>
+    </details>
+
+    <div id="export-bar">
+      <button id="export" class="primary">export png-24</button>
+      <button id="share-copy" style="width:100%;margin-top:8px">copy share link</button>
+      <div class="muted" id="export-note">exports at full canvas pixels, no alpha</div>
+    </div>
+    <footer>
+      <p>pilowlava 3d — vincent wagner / velvetyne, free art license. pilowlava — moglia &amp; landes, ofl. three.js — mit.</p>
+    </footer>
+  </aside>
+</div>
+<div id="loading">building the scene…</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

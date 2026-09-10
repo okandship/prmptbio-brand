@@ -1,0 +1,75 @@
+prmpt.bio brand studio — licence scope and third-party notices
+==============================================================
+
+Four different licences apply to different parts of this repository. The MIT
+licence in `LICENSE` covers the application code and nothing else.
+
+
+What MIT covers
+---------------
+
+    src/
+    index.html
+    style.css
+    .claude/dev-server.py
+
+Copyright (c) 2026 okandship. Full text in `LICENSE`.
+
+
+What MIT does not cover
+-----------------------
+
+Each item below is third-party work, distributed under its own licence and
+shipped with its own licence text. None of it is placed under MIT by being
+bundled here.
+
+### assets/glyphs/*.obj — Pilowlava 3D
+
+Copyright (c) 2020 Vincent Wagner <vincent@brot.studio>, Anton Moglia
+<anton@moglia.fr> and Jérémy Landes <jeremy@studiotriple.com>, published by
+Velvetyne Type Foundry. Licensed under the **Free Art License 1.3**.
+
+These are *modified copies*: the upstream single-OBJ character set was split
+into one file per glyph and normalised for layout, with the geometry itself
+unaltered. What changed, and the terms the modified copies are distributed
+under, are set out in `assets/glyphs/NOTICE.md`.
+
+    Originals      https://gitlab.com/velvetyne/pilowlava3D
+    Release notes  https://velvetyne.fr/news/pilowlava-3d/
+    Licence text   assets/glyphs/LICENSE-pilowlava3d.txt
+    Attribution    assets/glyphs/COPYRIGHT-pilowlava3d.md
+
+Free Art License 1.3 §4 is explicit that incorporating a Free Art licensed
+work into a larger work does not place the larger work under that licence.
+Only the glyph meshes carry it.
+
+### assets/Pilowlava-Regular.woff2 — Pilowlava (2D font)
+
+Copyright (c) Anton Moglia and Jérémy Landes. **SIL Open Font License 1.1**,
+reserved font name "Pilowlava". Shipped unmodified — this is the upstream
+webfont build, not a re-generated one, so the reserved name is not in question.
+
+    Source         https://velvetyne.fr/fonts/pilowlava/
+    Licence text   assets/LICENSE-pilowlava-font.txt
+
+### vendor/ — libraries
+
+All MIT, all vendored unmodified, each with its licence text alongside:
+
+    three.js               vendor/LICENSE-three.txt
+    three-gpu-pathtracer   vendor/LICENSE-three-gpu-pathtracer.txt
+    three-mesh-bvh         vendor/LICENSE-three-mesh-bvh.txt
+    mp4-muxer              vendor/LICENSE-mp4-muxer.txt
+
+### assets/key.svg — the key mark
+
+Original artwork, generated with Recraft and then edited (C2PA provenance
+metadata stripped, the bow's eye converted to a real hole). Not covered by any
+of the licences above.
+
+
+Using what this tool makes
+--------------------------
+
+If a poster or video made with this tool goes public, credit **Vincent Wagner,
+Anton Moglia and Jérémy Landes** for the 3D lettering.
