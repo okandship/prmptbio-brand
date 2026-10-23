@@ -16,6 +16,7 @@ export class Logo3D {
     });
     this.group = new THREE.Group();
     this.missing = [];
+    this.generation = 0;
   }
 
   async init() {
@@ -25,8 +26,17 @@ export class Logo3D {
 
   variantsFor(ch) { return this.index[ch] || this.index[ch.toLowerCase()] || null; }
 
-  async geometry(file) {
-    if (this.cache.has(file)) return this.cache.get(file);
+  /** cached as a promise, so overlapping builds share one fetch per glyph */
+  geometry(file) {
+    if (!this.cache.has(file)) {
+      const p = this.loadGeometry(file);
+      p.catch(() => this.cache.delete(file));   // let a failed fetch be retried
+      this.cache.set(file, p);
+    }
+    return this.cache.get(file);
+  }
+
+  async loadGeometry(file) {
     const txt = await (await fetch('assets/glyphs/' + file)).text();
     const obj = this.loader.parse(txt);
     let geo = null;
@@ -35,15 +45,17 @@ export class Logo3D {
     geo.deleteAttribute('uv');
     geo = mergeVertices(geo, 1e-4);
     geo.computeVertexNormals();          // the meshes are subdivision cages: smooth them
-    this.cache.set(file, geo);
     return geo;
   }
 
-  /** build `text` as a centred group whose cap height is 1 unit; newlines start a new line */
+  /**
+   * build `text` as a centred group whose cap height is 1 unit; newlines start a new line.
+   * Resolves to null if a newer build started while this one was fetching glyphs.
+   */
   async build(text, { tracking = 0.06, leading = 1.15, seed = 0 } = {}) {
-    const old = this.group;
+    const gen = ++this.generation;
     const group = new THREE.Group();
-    this.missing = [];
+    const missing = [];
     const lines = String(text).split('\n');
     let n = 0;                        // runs across the whole block: alternates keep varying line to line
 
@@ -55,7 +67,7 @@ export class Logo3D {
         const i = n++;
         if (ch === ' ') { x += SPACE_ADVANCE + tracking * CAP; continue; }
         const variants = this.variantsFor(ch);
-        if (!variants) { this.missing.push(ch); continue; }
+        if (!variants) { missing.push(ch); continue; }
         const pick = variants[(seed + i * 7 + ch.charCodeAt(0)) % variants.length];
         const geo = await this.geometry(pick.file);
         const mesh = new THREE.Mesh(geo, this.material);
@@ -76,6 +88,11 @@ export class Logo3D {
     group.children.forEach(r => { r.position.x -= c.x; r.position.y -= c.y; r.position.z -= c.z; });
     group.scale.setScalar(1 / CAP);
 
+    // builds overlap while glyphs download; an older one finishing late must neither
+    // overwrite newer text nor swap out a group that is no longer the one on stage
+    if (gen !== this.generation) return null;
+    const old = this.group;
+    this.missing = missing;
     old.parent?.add(group);
     old.parent?.remove(old);
     this.group = group;

@@ -13,10 +13,17 @@ export class RayTracer {
     this.target = 96;
     this.premultiplied = true;   // verified against the accumulation buffer
     this.composite = null;
+    this.ready = null;
+  }
+
+  /** shared, so a second click while the bundle loads doesn't build a second tracer */
+  init() {
+    this.ready ||= this._init().catch(err => { this.ready = null; throw err; });
+    return this.ready;
   }
 
   /** the tracer bundle is ~216 KB, so it is only fetched when ray-traced mode is first used */
-  async init() {
+  async _init() {
     const { WebGLPathTracer } = await import('three-gpu-pathtracer');
     const renderer = this.poster.renderer;
     const pt = new WebGLPathTracer(renderer);

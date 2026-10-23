@@ -64,11 +64,13 @@ export class Poster {
     // ---- environment + lights -------------------------------------------
     // one studio map, two consumers: PMREM for the raster path, the raw equirect for the tracer
     this.envEquirect = studioEquirect(768);
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.envPMREM = pmrem.fromEquirectangular(this.envEquirect);
-    this.scene.environment = this.envPMREM.texture;
+    this.envPMREM = null;
+    this.buildEnvPMREM();
     this.scene.environmentIntensity = 1.5;
-    pmrem.dispose();
+    // the PMREM lives only on the GPU, so a lost context leaves it blank and the glossy
+    // logotype, lit almost entirely by reflections, renders black until it is rebuilt.
+    // three re-initialises on this same event first, as it registered its listener earlier.
+    canvas.addEventListener('webglcontextrestored', () => this.buildEnvPMREM());
 
     this.ambient = new THREE.AmbientLight(0xffffff, 0.45);
     this.keyLight = new THREE.DirectionalLight(0xffffff, 3.4);
@@ -81,6 +83,15 @@ export class Poster {
     this.previewPx = null;
     this.posterPx = { w: 1600, h: 2000 };
     this.bufferPx = { w: 1600, h: 2000 };
+  }
+
+  buildEnvPMREM() {
+    const active = !this.envPMREM || this.scene.environment === this.envPMREM.texture;
+    this.envPMREM?.dispose();
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.envPMREM = pmrem.fromEquirectangular(this.envEquirect);
+    pmrem.dispose();
+    if (active) this.scene.environment = this.envPMREM.texture;
   }
 
   setLightAngle(deg) {

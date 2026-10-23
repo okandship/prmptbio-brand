@@ -209,15 +209,18 @@ function applyRenderState() {
   rtDirty = true;
 }
 
+let modeRequest = 0;
 async function setMode(on) {
+  const req = ++modeRequest;
   if (on && !rt.pt) {
     $('#rt-status').textContent = 'loading tracer…';
     try {
       await rt.init();
     } catch (err) {
-      $('#rt-status').textContent = 'tracer failed to load: ' + err.message;
+      if (req === modeRequest) $('#rt-status').textContent = 'tracer failed to load: ' + err.message;
       return;
     }
+    if (req !== modeRequest) return;   // switched again while the tracer loaded
     applyRenderState();   // the tracer boots on its own defaults; state is the truth
   }
   $('#mode-draft').classList.toggle('on', !on);
@@ -295,7 +298,8 @@ function rebuildLogoDebounced() {
   logoTimer = setTimeout(rebuildLogo, 120);
 }
 async function rebuildLogo() {
-  await logo3d.build(state.logo.text, { tracking: state.logo.track, leading: state.logo.lead, seed: state.logo.seed });
+  const built = await logo3d.build(state.logo.text, { tracking: state.logo.track, leading: state.logo.lead, seed: state.logo.seed });
+  if (!built) return;           // superseded by a newer edit, which will finish this
   applyTransforms(); ui.draw(); invalidate();
   $('#export-note').textContent = logo3d.missing.length
     ? `no 3d glyph for: ${[...new Set(logo3d.missing)].join(' ')}`
@@ -571,6 +575,8 @@ function wire() {
   });
 
   window.addEventListener('resize', fit);
+  // the poster rebuilds its environment on restore (registered first); redraw and re-trace after it
+  view.addEventListener('webglcontextrestored', invalidate);
 }
 
 /** accumulate a full-quality trace at export size, then encode png-24 */
